@@ -1,0 +1,17 @@
+B1;2802;0c# Python files
+*.py[co]
+
+# Buildout
+.buildout
+bin
+*.egg-info*
+
+# Editor Files
+.*project*
+.settings
+*~
+\#*\#
+
+# Setuptools
+dist
+MANIFEST
