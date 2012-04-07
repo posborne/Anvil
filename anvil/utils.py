@@ -18,8 +18,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+import Queue
 import datetime
 import functools
+import threading
 
 
 def iso_8601_to_datetime(dt):
@@ -54,3 +56,63 @@ class memoized(object):
     def __get__(self, obj, objtype):
         """Support instance methods."""
         return functools.partial(self.__call__, obj)
+
+
+class ThreadPoolWorker(threading.Thread):
+    """A very simmple threadpool worker (off a queue)"""
+
+    def __init__(self, queue, timeout=0.1):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.timeout = timeout
+        self.has_exit = False
+
+    def stop(self):
+        self.has_exit = True
+
+    def run(self):
+        while True:
+            try:
+                action, args, kwargs = self.queue.get(timeout=self.timeout)
+            except Queue.Empty:
+                if self.has_exit:
+                    return  # only quit when no work to do
+            else:
+                action(*args, **kwargs)
+
+
+class ThreadPool(object):
+    """Dirt simple threadpool implementation"""
+
+    def __init__(self, workers=50):
+        self.workers = workers
+        self._workers = []
+        self._queue = Queue.Queue()
+
+    def start(self):
+        for _ in xrange(50):
+            worker = ThreadPoolWorker(self._queue)
+            self._workers.append(worker)
+            worker.start()
+
+    def queue_action(self, fn, *args, **kwargs):
+        self._queue.put((fn, args, kwargs))
+
+    def stop(self):
+        for worker in self._workers:
+            worker.stop()
+
+    def join(self):
+        for worker in self._workers:
+            worker.join()
+
+
+def parallel_execute(*executables, **kwargs):
+    """Execute a set of functions in parallel (on a threadpool)"""
+    workers = min(len(executables), kwargs.get('workers', 500))
+    threadpool = ThreadPool(workers=workers)
+    threadpool.start()
+    for fn in executables:
+        threadpool.queue_action(fn)
+    threadpool.stop()
+    threadpool.join()

@@ -19,50 +19,11 @@
 # IN THE SOFTWARE.
 
 from anvil import Anvil
+from anvil.examples.helpers import find_changesets_for_authors
 import datetime
-import functools
-import threading
 
 AUTHORS = ["Paul Osborne", "Tom Manley"]
 START_DT = datetime.datetime(2011, 11, 1)
-
-
-def find_changesets_for_authors(anvil, authors, start_dt,
-                                end_dt=datetime.datetime.now()):
-    """parallel search for changesets by some set of users in a date range"""
-    repos = anvil.get_repos()
-
-    kiln_start_date = start_dt.strftime("%m/%d/%Y")
-    kiln_end_date = end_dt.strftime("%m/%d/%Y")
-
-    results = {}
-
-    def compute_and_store(repo, person, start_date, end_date):
-        result = repo.search_changesets(
-            'edited:"{}:{}" author:"{}"'.format(kiln_start_date, kiln_end_date, person))
-        results[(repo, person)] = result
-
-    computations = []
-    for repo in repos:
-        for person in authors:
-            f = functools.partial(compute_and_store,
-                                  repo, person, "11/1/11", "4/6/12")
-            computations.append(f)
-
-    threads = [threading.Thread(target=computation)
-               for computation in computations]
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
-
-    changesets_by_author = {}
-    for (repo, author), changesets in results.items():
-        changesets_by_author.setdefault(author, []).extend(changesets)
-
-    return changesets_by_author
 
 
 def main():
