@@ -22,9 +22,10 @@ from anvil import Anvil
 from anvil.examples.helpers import find_changesets_for_authors
 from matplotlib import pyplot as pp
 import datetime
-import times
 
-START_DT = datetime.datetime(2000, 1, 1)
+
+def _normalize_to_month(dt):
+    return datetime.datetime(dt.year, dt.month, 1)
 
 
 def main():
@@ -35,12 +36,14 @@ def main():
     changesets = find_changesets_for_authors(
         anvil, ['Paul Osborne', ], datetime.datetime(2009, 1, 1)).values()[0]
 
-    commit_hour = [times.to_local(c.date_time, 'US/Central').hour
-                   for c in changesets]
-    pp.hist(commit_hour, 24)
-    a = pp.gca()
-    a.set_xlim([0, 23])
+    commit_dts = [c.date_time for c in changesets]
+    commit_month = [_normalize_to_month(dt) for dt in commit_dts]
+    months = list(set(commit_month))
+    values = [commit_month.count(m) for m in months]
+    pp.bar(months, values, width=20)
     pp.show()
+    import code
+    code.interact(local=locals())
 
 
 if __name__ == '__main__':
