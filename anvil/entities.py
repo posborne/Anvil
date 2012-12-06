@@ -25,7 +25,6 @@ class KilnChangeset(object):
 
     @classmethod
     def from_json(cls, anvil, changeset_json):
-        index = changeset_json['ixChangeset']
         reviews = changeset_json['ixReviews']
         bugs = changeset_json['ixBugs']
         rev = changeset_json['rev']
@@ -34,7 +33,7 @@ class KilnChangeset(object):
         author = changeset_json['sAuthor']
         description = changeset_json['sDescription']
         date_time = iso_8601_to_datetime(changeset_json['dt'].rsplit('.', 1)[0])
-        return cls(anvil, index, reviews, bugs, rev, rev_parent1, rev_parent2,
+        return cls(anvil, reviews, bugs, rev, rev_parent1, rev_parent2,
                    author, description, date_time)
 
     def is_merge(self):
@@ -47,10 +46,9 @@ class KilnChangeset(object):
     def is_linked(self):
         return len(self.bugs) > 0
 
-    def __init__(self, anvil, index, reviews, bugs, rev, rev_parent1,
+    def __init__(self, anvil, reviews, bugs, rev, rev_parent1,
                   rev_parent2, author, description, date_time):
         self.anvil = anvil
-        self.index = index
         self.reviews = reviews
         self.bugs = bugs
         self.rev = rev
@@ -76,6 +74,33 @@ class KilnPerson(object):
         self.email = email
         self.name = name
 
+class KilnAnnotation(object):
+
+    @classmethod
+    def from_json(cls, anvil, annotation_json):
+        lines = annotation_json['nLines']
+        rev = annotation_json['rev']
+        author = annotation_json['sAuthor']
+        return cls(anvil, lines, rev, author)
+
+    def __init__(self, anvil, lines, rev, author):
+        self.anvil = anvil
+        self.lines = lines
+        self.rev = rev
+        self.author = author
+
+class KilnCat(object):
+
+    @classmethod
+    def from_json(cls, anvil, cat_json):
+        lines = cat_json['bsLines']
+        annotations = cat_json['annotations']
+        return cls(anvil, lines, annotations)
+
+    def __init__(self, anvil, lines, annotations):
+        self.anvil = anvil
+        self.lines = lines
+        self.annotations = annotations
 
 class KilnRepo(object):
 
@@ -128,7 +153,28 @@ class KilnRepo(object):
         for changeset_json in res['resultChangeset']:
             changesets.append(KilnChangeset.from_json(self.anvil, changeset_json))
         return changesets
-
+    
+    def where_used(self):
+        """
+        Return a list of repositories that have this repository as a sub-repo.
+        """
+        subrepos = []
+        projects = []
+        path = ''.join("%02X" % ord(x) for x in ".hgsub")
+        for project_json in self.get_json("Project"):
+            projects.append(KilnProject.from_json(self, project_json))
+        for project in projects:
+            for repo_group in project.repo_groups:
+                for repo in repo_group.repos:
+                    if repo.index != self.index:
+                        res = self.anvil.get_json("File", ixRepo=repo.index, 
+                                                  bpPath=path)
+                        entries, annotations = KilnCat.from_json(self.anvil, 
+                                                                 res)
+                        for entry in entries:
+                           if self.name in entry:
+                               subrepos.append(repo)
+        return subrepos
 
 class KilnRepoGroup(object):
 
