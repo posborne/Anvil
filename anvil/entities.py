@@ -161,19 +161,21 @@ class KilnRepo(object):
         subrepos = []
         projects = []
         path = ''.join("%02X" % ord(x) for x in ".hgsub")
-        for project_json in self.get_json("Project"):
+        for project_json in self.anvil.get_json("Project"):
             projects.append(KilnProject.from_json(self, project_json))
         for project in projects:
             for repo_group in project.repo_groups:
                 for repo in repo_group.repos:
                     if repo.index != self.index:
-                        res = self.anvil.get_json("File", ixRepo=repo.index, 
-                                                  bpPath=path)
-                        entries, annotations = KilnCat.from_json(self.anvil, 
-                                                                 res)
-                        for entry in entries:
-                           if self.name in entry:
-                               subrepos.append(repo)
+                        tmp = "Repo/" + str(repo.index) + "/File/" + path
+                        res = self.anvil.get_json(tmp)
+                        if not res.has_key('errors'):
+                            print "Checking repo index %d for %s..." % \
+                                  (repo.index, self.name)
+                            cat = KilnCat.from_json(self.anvil, res)
+                            for entry in cat.lines:
+                               if self.name in entry:
+                                   subrepos.append(repo)
         return subrepos
 
 class KilnRepoGroup(object):
