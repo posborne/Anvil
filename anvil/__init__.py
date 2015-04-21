@@ -38,19 +38,20 @@ class Anvil(object):
 
     """
 
-    def __init__(self, kiln_prefix):
+    def __init__(self, kiln_prefix, verifySslCert):
         self.kiln_prefix = kiln_prefix
+        self.verifySslCert = verifySslCert
         self.token = None
 
     def _kiln_url(self, path):
-        return ("http://{prefix}.kilnhg.com/Api/1.0/{path}"
+        return ("{prefix}/Api/1.0/{path}"
                 .format(prefix=self.kiln_prefix, path=path))
 
     def get_json(self, path, **kwargs):
         if not 'sUser' in kwargs and not 'sPassword' in kwargs:
             kwargs['token'] = self.token
         url = self._kiln_url(path)
-        r = requests.get(url, params=kwargs)
+        r = requests.get(url, params=kwargs, verify=self.verifySslCert)
         return json.loads(r.text)
 
     def create_session(self, user, password):
