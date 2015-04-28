@@ -32,7 +32,7 @@ class Anvil(object):
 
     Example Usage::
 
-        >>> anvil = Anvil("mycompany")
+        >>> anvil = Anvil("https://kiln.yourcompany.com/kiln", False)
         >>> anvil.create_session()
         >>> anvil.
 
