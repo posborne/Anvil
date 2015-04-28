@@ -38,9 +38,9 @@ class Anvil(object):
 
     """
 
-    def __init__(self, kiln_prefix, verifySslCert):
+    def __init__(self, kiln_prefix, verify_ssl_cert):
         self.kiln_prefix = kiln_prefix
-        self.verifySslCert = verifySslCert
+        self.verify_ssl_cert = verify_ssl_cert
         self.token = None
 
     def _kiln_url(self, path):
