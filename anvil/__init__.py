@@ -51,7 +51,7 @@ class Anvil(object):
         if not 'sUser' in kwargs and not 'sPassword' in kwargs:
             kwargs['token'] = self.token
         url = self._kiln_url(path)
-        r = requests.get(url, params=kwargs, verify=self.verifySslCert)
+        r = requests.get(url, params=kwargs, verify=self.verify_ssl_cert)
         return json.loads(r.text)
 
     def create_session(self, user, password):
