@@ -11,7 +11,7 @@ Example
 Here's a basic example showing how one might grab the name of all repos:
 
     >>> from anvil import Anvil
-    >>> anvil = Anvil("mycompany")
+    >>> anvil = Anvil("https://kiln.yourcompany.com/kiln", False)
     >>> anvil.create_session_by_prompting()
     Kiln Username: me@mycomponay.com
     Password: ***********
